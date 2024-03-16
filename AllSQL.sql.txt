@@ -1,0 +1,199 @@
+-- Disable foreign key checks temporarily
+SET CONSTRAINTS ALL DEFERRED;
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.AgentType
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "AgentType" (
+  "ID" SERIAL PRIMARY KEY,
+  "Title" VARCHAR(50) NOT NULL,
+  "Image" VARCHAR(100)
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.Agent
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "Agent" (
+  "ID" SERIAL PRIMARY KEY,
+  "Title" VARCHAR(150) NOT NULL,
+  "AgentTypeID" INT NOT NULL,
+  "Address" VARCHAR(300),
+  "INN" VARCHAR(12) NOT NULL,
+  "KPP" VARCHAR(9),
+  "DirectorName" VARCHAR(100),
+  "Phone" VARCHAR(20) NOT NULL,
+  "Email" VARCHAR(255),
+  "Logo" VARCHAR(100),
+  "Priority" INT NOT NULL,
+  CONSTRAINT "FK_Agent_AgentType" FOREIGN KEY ("AgentTypeID")
+    REFERENCES "AgentType" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.Supplier
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "Supplier" (
+  "ID" SERIAL PRIMARY KEY,
+  "Title" VARCHAR(150) NOT NULL,
+  "INN" VARCHAR(12) NOT NULL,
+  "StartDate" DATE NOT NULL,
+  "QualityRating" INT,
+  "SupplierType" VARCHAR(20)
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.MaterialType
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "MaterialType" (
+  "ID" SERIAL PRIMARY KEY,
+  "Title" VARCHAR(50) NOT NULL,
+  "DefectedPercent" DOUBLE PRECISION NOT NULL
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.Material
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "Material" (
+  "ID" SERIAL PRIMARY KEY,
+  "Title" VARCHAR(100) NOT NULL,
+  "CountInPack" INT NOT NULL,
+  "Unit" VARCHAR(10) NOT NULL,
+  "CountInStock" DOUBLE PRECISION,
+  "MinCount" DOUBLE PRECISION NOT NULL,
+  "Description" TEXT,
+  "Cost" DECIMAL(10,2) NOT NULL,
+  "Image" VARCHAR(100),
+  "MaterialTypeID" INT NOT NULL,
+  CONSTRAINT "FK_Material_MaterialType" FOREIGN KEY ("MaterialTypeID")
+    REFERENCES "MaterialType" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.ProductType
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "ProductType" (
+  "ID" SERIAL PRIMARY KEY,
+  "Title" VARCHAR(50) NOT NULL,
+  "DefectedPercent" DOUBLE PRECISION NOT NULL
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.Product
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "Product" (
+  "ID" SERIAL PRIMARY KEY,
+  "Title" VARCHAR(100) NOT NULL,
+  "ProductTypeID" INT,
+  "ArticleNumber" VARCHAR(10) NOT NULL,
+  "Description" TEXT,
+  "Image" VARCHAR(100),
+  "ProductionPersonCount" INT,
+  "ProductionWorkshopNumber" INT,
+  "MinCostForAgent" DECIMAL(10,2) NOT NULL,
+  CONSTRAINT "FK_Product_ProductType" FOREIGN KEY ("ProductTypeID")
+    REFERENCES "ProductType" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.MaterialSupplier
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "MaterialSupplier" (
+  "MaterialID" INT NOT NULL,
+  "SupplierID" INT NOT NULL,
+  PRIMARY KEY ("MaterialID", "SupplierID"),
+  CONSTRAINT "FK_MaterialSupplier_Supplier" FOREIGN KEY ("SupplierID")
+    REFERENCES "Supplier" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT "FK_MaterialSupplier_Material" FOREIGN KEY ("MaterialID")
+    REFERENCES "Material" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.ProductMaterial
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "ProductMaterial" (
+  "ProductID" INT NOT NULL,
+  "MaterialID" INT NOT NULL,
+  "Count" DOUBLE PRECISION,
+  PRIMARY KEY ("ProductID", "MaterialID"),
+  CONSTRAINT "FK_ProductMaterial_Material" FOREIGN KEY ("MaterialID")
+    REFERENCES "Material" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT "FK_ProductMaterial_Product" FOREIGN KEY ("ProductID")
+    REFERENCES "Product" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.ProductSale
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "ProductSale" (
+  "ID" SERIAL PRIMARY KEY,
+  "AgentID" INT NOT NULL,
+  "ProductID" INT NOT NULL,
+  "SaleDate" DATE NOT NULL,
+  "ProductCount" INT NOT NULL,
+  CONSTRAINT "FK_ProductSale_Agent" FOREIGN KEY ("AgentID")
+    REFERENCES "Agent" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT "FK_ProductSale_Product" FOREIGN KEY ("ProductID")
+    REFERENCES "Product" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.Shop
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "Shop" (
+  "ID" SERIAL PRIMARY KEY,
+  "Title" VARCHAR(150) NOT NULL,
+  "Address" VARCHAR(300),
+  "AgentID" INT NOT NULL,
+  CONSTRAINT "FK_Shop_Agent" FOREIGN KEY ("AgentID")
+    REFERENCES "Agent" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.MaterialCountHistory
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "MaterialCountHistory" (
+  "ID" SERIAL PRIMARY KEY,
+  "MaterialID" INT NOT NULL,
+  "ChangeDate" TIMESTAMP NOT NULL,
+  "CountValue" DOUBLE PRECISION NOT NULL,
+  CONSTRAINT "FK_MaterialCountHistory_Material" FOREIGN KEY ("MaterialID")
+    REFERENCES "Material" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.ProductCostHistory
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "ProductCostHistory" (
+  "ID" SERIAL PRIMARY KEY,
+  "ProductID" INT NOT NULL,
+  "ChangeDate" TIMESTAMP NOT NULL,
+  "CostValue" DECIMAL(10,2) NOT NULL,
+  CONSTRAINT "FK_ProductCostHistory_Product" FOREIGN KEY ("ProductID")
+    REFERENCES "Product" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- ----------------------------------------------------------------------------
+-- Table dbo.AgentPriorityHistory
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "AgentPriorityHistory" (
+  "ID" SERIAL PRIMARY KEY,
+  "AgentID" INT NOT NULL,
+  "ChangeDate" TIMESTAMP NOT NULL,
+  "PriorityValue" INT NOT NULL,
+  CONSTRAINT "FK_AgentPriorityHistory_Agent" FOREIGN KEY ("AgentID")
+    REFERENCES "Agent" ("ID") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- Enable foreign key checks
+SET CONSTRAINTS ALL IMMEDIATE;
+
+INSERT INTO "MaterialType" ("Title", "DefectedPercent") VALUES ('Пресс', '0.1');
+INSERT INTO "MaterialType" ("Title", "DefectedPercent") VALUES ('Рулон', '0.1');
+INSERT INTO "MaterialType" ("Title", "DefectedPercent") VALUES ('Гранулы', '0.1');
+INSERT INTO "MaterialType" ("Title", "DefectedPercent") VALUES ('Нарезка', '0.1');
+
+INSERT INTO "ProductType" ("Title", "DefectedPercent") VALUES ('Один слой', '0.1');
+INSERT INTO "ProductType" ("Title", "DefectedPercent") VALUES ('Два слоя', '0.1');
+INSERT INTO "ProductType" ("Title", "DefectedPercent") VALUES ('Три слоя', '0.1');
+INSERT INTO "ProductType" ("Title", "DefectedPercent") VALUES ('Супер мягкая', '0.1');
+INSERT INTO "ProductType" ("Title", "DefectedPercent") VALUES ('Детская', '0.1');
